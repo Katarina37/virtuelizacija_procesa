@@ -34,7 +34,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,9 +47,20 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WeatherService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WeatherStationClient\WeatherStationClient.csproj">
+      <Project>{09a2270a-0bb3-4b52-9d5b-ef544805e757}</Project>
+      <Name>WeatherStationClient</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WeatherStationCommon\WeatherStationCommon.csproj">
+      <Project>{bd8fbff4-ebc5-4097-add4-dc5615a25442}</Project>
+      <Name>WeatherStationCommon</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
