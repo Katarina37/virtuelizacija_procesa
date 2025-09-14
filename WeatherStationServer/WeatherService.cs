@@ -17,6 +17,7 @@ namespace WeatherStationServer
         private StreamWriter _measurementsWriter;
         private StreamWriter _rejectsWriter;
         private string _dataDirectory;
+        private bool _disposed = false;
 
         public WeatherService()
         {
@@ -44,6 +45,10 @@ namespace WeatherStationServer
 
                 _measurementsWriter.WriteLine("T,Tpot,Tdew,Sh,Rh,Date");
                 _rejectsWriter.WriteLine("T,Tpot,Tdew,Sh,Rh,Date,Reason");
+
+                Console.WriteLine($"Session started: {_sessionId}");
+                Console.WriteLine($"Measurement file: {measurementsFile}");
+                Console.WriteLine($"Rejects file: {rejectsFile}");
 
                 return _sessionId;
             }
@@ -109,9 +114,27 @@ namespace WeatherStationServer
             _rejectsWriter?.Dispose();
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    DisposeWriters();
+                }
+                _disposed = true;
+            }
+        }
+
         public void Dispose()
         {
-            DisposeWriters();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~WeatherService()
+        {
+            Dispose(false);
         }
     }
 }

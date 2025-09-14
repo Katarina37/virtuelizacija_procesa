@@ -50,11 +50,5 @@
     <Compile Include="ValidationFault.cs" />
     <Compile Include="WeatherSample.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\WeatherStationClient\WeatherStationClient.csproj">
-      <Project>{09a2270a-0bb3-4b52-9d5b-ef544805e757}</Project>
-      <Name>WeatherStationClient</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
