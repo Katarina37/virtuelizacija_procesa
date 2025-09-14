@@ -74,6 +74,8 @@ namespace WeatherStationServer
                 _measurementsWriter.WriteLine($"{sample.T},{sample.Tpot},{sample.Tdew},{sample.Sh},{sample.Rh},{sample.Date:o}");
                 _measurementsWriter.Flush();
 
+                Console.WriteLine($"Sample received: {sample.Date}");
+
                 return true;
             }
             catch (FaultException) 
@@ -84,6 +86,8 @@ namespace WeatherStationServer
             {
                 _rejectsWriter.WriteLine($"{sample.T},{sample.Tpot},{sample.Tdew},{sample.Sh},{sample.Rh},{sample.Date:o},{ex.Message}");
                 _rejectsWriter.Flush();
+
+                Console.WriteLine($"Rejected sample: {ex.Message}");
 
                 throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message });
             }
