@@ -261,26 +261,29 @@ namespace WeatherStationServer
 
         private void AnalyzeHeatIndex(WeatherSample sample)
         {
-            double hi = CalculateHeatIndex(sample.T, sample.Rh);
-
-            if(hi > _hiThreshold)
+            lock (_lockObject)
             {
-                string message = $"Heat index exceeded threshold: {hi:F2} > {_hiThreshold}";
-                RaiseOnWarningRaised(message);
-            }
-
-            if (!double.IsNaN(_previousHi))
-            {
-                double deltaHi = hi - _previousHi;
-
-                if(Math.Abs(deltaHi) > _hiThreshold / 2)
+                try
                 {
-                    string direction = deltaHi > 0 ? "above" : "below";
-                    string message = $"HI spike detected: {Math.Abs(deltaHi):F2} ({direction} expected)";
-                    RaiseOnWarningRaised(message);
+                    double hi = CalculateHeatIndex(sample.T, sample.Rh);
+
+                    if (!double.IsNaN(_previousHi))
+                    {
+                        double deltaHi = hi - _previousHi;
+
+                        if(Math.Abs(deltaHi) > _hiThreshold)
+                        {
+                            string direction = deltaHi > 0 ? "above" : "below";
+                            string message = $"HI spike detected: {Math.Abs(deltaHi):F2} ({direction} expected)";
+                            RaiseOnWarningRaised(message);
+                        }
+                    }
+                    _previousHi = hi;
+                }catch(Exception ex)
+                {
+                    Console.WriteLine($"Error in AnalyzeHeatIndex: {ex.Message}");
                 }
             }
-            _previousHi = hi;
         }
 
         /*private void DisposeWriters()
