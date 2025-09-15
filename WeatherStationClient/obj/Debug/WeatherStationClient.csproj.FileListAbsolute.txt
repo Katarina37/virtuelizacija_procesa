@@ -1,0 +1,11 @@
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\bin\Debug\WeatherStationClient.exe.config
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\bin\Debug\WeatherStationClient.exe
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\bin\Debug\WeatherStationClient.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\bin\Debug\WeatherStationCommon.dll
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\bin\Debug\WeatherStationCommon.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\obj\Debug\WeatherStationClient.csproj.AssemblyReference.cache
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\obj\Debug\WeatherStationClient.csproj.CoreCompileInputs.cache
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\obj\Debug\WeatherS.EF3EAF19.Up2Date
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\obj\Debug\WeatherStationClient.exe
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\obj\Debug\WeatherStationClient.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationClient\obj\Debug\WeatherStationClient.exe.config

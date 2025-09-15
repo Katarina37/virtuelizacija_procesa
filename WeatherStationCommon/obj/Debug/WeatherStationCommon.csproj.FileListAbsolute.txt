@@ -1,0 +1,6 @@
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationCommon\bin\Debug\WeatherStationCommon.dll
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationCommon\bin\Debug\WeatherStationCommon.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationCommon\obj\Debug\WeatherStationCommon.csproj.AssemblyReference.cache
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationCommon\obj\Debug\WeatherStationCommon.csproj.CoreCompileInputs.cache
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationCommon\obj\Debug\WeatherStationCommon.dll
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationCommon\obj\Debug\WeatherStationCommon.pdb

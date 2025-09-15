@@ -41,13 +41,7 @@ namespace WeatherStationClient
 
                     //zadatak 7
 
-                    var binding = new NetTcpBinding(SecurityMode.None);
-                    binding.TransferMode = TransferMode.Streamed;
-                    binding.MaxReceivedMessageSize = 10000000;
-
-                    var endpointAddress = new EndpointAddress("net.tcp://localhost:8000/WeatherService");
-
-                    using (var channelFactory = new ChannelFactory<IServiceContract>(binding, endpointAddress))
+                    using (var channelFactory = new ChannelFactory<IServiceContract>("WeatherService"))
                     {
                         var client = channelFactory.CreateChannel();
 
@@ -123,7 +117,7 @@ namespace WeatherStationClient
 
         static WeatherSample[] LoadSamplesFromCsv(string csvPath, StreamWriter logWriter)
         {
-            var samples = new System.Collections.Generic.List<WeatherSample>();
+            var samples = new List<WeatherSample>();
 
             if (!File.Exists(csvPath))
             {
@@ -145,23 +139,23 @@ namespace WeatherStationClient
                     while(!reader.EndOfStream && samples.Count < maxSamples)
                     {
                         lineNumber++;
-                        string line = reader.ReadLine();
+                        var line = reader.ReadLine();
                         if (string.IsNullOrEmpty(line)) continue;
 
-                        string[] values = line.Split(',');
+                        var values = line.Split(',');
 
                         try
                         {
-                            if(values.Length >= 6)
+                            if(values.Length >= 10)
                             {
                                 var sample = new WeatherSample
                                 {
-                                    T = double.Parse(values[0], CultureInfo.InvariantCulture),
-                                    Tpot = double.Parse(values[1], CultureInfo.InvariantCulture),
-                                    Tdew = double.Parse(values[2], CultureInfo.InvariantCulture),
-                                    Sh = double.Parse(values[3], CultureInfo.InvariantCulture),
-                                    Rh = double.Parse(values[4], CultureInfo.InvariantCulture),
-                                    Date = DateTime.Parse(values[5], CultureInfo.InvariantCulture),
+                                    T = ParseDouble(values[2], logWriter, lineNumber, "T"),
+                                    Tpot = ParseDouble(values[3], logWriter, lineNumber, "Tpot"),
+                                    Tdew = ParseDouble(values[4], logWriter, lineNumber, "Tdew"),
+                                    Rh = ParseDouble(values[5], logWriter, lineNumber, "Rh"),
+                                    Sh = ParseDouble(values[9], logWriter, lineNumber, "Sh"),
+                                    Date = ParseDate(values[0])
                                 };
 
                                 samples.Add(sample);
@@ -188,6 +182,32 @@ namespace WeatherStationClient
                 logWriter.WriteLine($"{DateTime.Now}: Error reading CSV: {ex.Message}");
             }
             return samples.ToArray();
+        }
+
+        static double ParseDouble(string s, StreamWriter logWriter, int lineNumber, string columnName)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                logWriter.WriteLine($"Line {lineNumber}: Empty value for {columnName}");
+                return double.NaN;
+            }
+
+            if (double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
+                return value;
+
+            logWriter.WriteLine($"Line {lineNumber}: Invalid double '{s}' for {columnName}");
+            return double.NaN;
+        }
+
+        static DateTime ParseDate(string s)
+        {
+            return DateTime.TryParseExact(
+                                s,
+                                "yyyy-MM-dd HH:mm:ss",
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.None,
+                                out var d
+                            ) ? d : DateTime.MinValue;
         }
     }
 }

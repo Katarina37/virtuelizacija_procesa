@@ -1,0 +1,14 @@
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationServer.exe.config
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationServer.exe
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationServer.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationClient.exe
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationCommon.dll
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationClient.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationClient.exe.config
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\bin\Debug\WeatherStationCommon.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\obj\Debug\WeatherStationServer.csproj.AssemblyReference.cache
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\obj\Debug\WeatherStationServer.csproj.CoreCompileInputs.cache
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\obj\Debug\WeatherS.A6EA21EA.Up2Date
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\obj\Debug\WeatherStationServer.exe
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\obj\Debug\WeatherStationServer.pdb
+C:\Users\USER\Desktop\virtuelizacija_procesa\WeatherStationServer\obj\Debug\WeatherStationServer.exe.config

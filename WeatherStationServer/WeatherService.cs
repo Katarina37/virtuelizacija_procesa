@@ -11,12 +11,10 @@ using System.Configuration;
 
 namespace WeatherStationServer
 {
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerSession)]
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class WeatherService : IServiceContract, IDisposable
     {
         private string _sessionId;
-        private StreamWriter _measurementsWriter;
-        private StreamWriter _rejectsWriter;
         private string _dataDirectory;
         private bool _disposed = false;
 
@@ -35,6 +33,10 @@ namespace WeatherStationServer
         //zadatak 10
         private double _previousHi = double.NaN;
         private double _hiThreshold;
+
+        private readonly object _lockObject = new object();
+        private readonly Dictionary<string, StreamWriter> _measurementsWriters = new Dictionary<string, StreamWriter>();
+        private readonly Dictionary<string, StreamWriter> _rejectsWriters = new Dictionary<string, StreamWriter>();
 
 
         protected virtual void RaiseOnTransferStarted(string sessionId)
@@ -71,94 +73,149 @@ namespace WeatherStationServer
 
         public string StartSession(SessionMetadata meta)
         {
-            try
+            lock (_lockObject)
             {
-                if (string.IsNullOrEmpty(meta.StationId))
-                    throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "StationId is required" });
-                
-                if(meta.ExpectedSamples <= 0)
-                    throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "ExpectedSamples must be greater than 0" });
+                try
+                {
+                    if (string.IsNullOrEmpty(meta.StationId))
+                        throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "StationId is required" },
+                            new FaultReason("StationId is required"));
 
-                _sessionId = $"{meta.StationId}_{meta.StartTime:yyyyMMdd_HHmmss}";
+                    if (meta.ExpectedSamples <= 0)
+                        throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "ExpectedSamples must be greater than 0" },
+                            new FaultReason("Invalid expected samples"));
 
-                string measurementsFile = Path.Combine(_dataDirectory, $"{_sessionId}_measurements.csv");
-                string rejectsFile = Path.Combine(_dataDirectory, $"{_sessionId}_rejects.csv");
+                    _sessionId = $"{meta.StationId}_{meta.StartTime:yyyyMMdd_HHmmss}";
 
-                _measurementsWriter = new StreamWriter(measurementsFile, true);
-                _rejectsWriter = new StreamWriter(rejectsFile, true);
+                    string measurementsFile = Path.Combine(_dataDirectory, $"{_sessionId}_measurements.csv");
+                    string rejectsFile = Path.Combine(_dataDirectory, $"{_sessionId}_rejects.csv");
 
-                _measurementsWriter.WriteLine("T,Tpot,Tdew,Sh,Rh,Date");
-                _rejectsWriter.WriteLine("T,Tpot,Tdew,Sh,Rh,Date,Reason");
+                    var measurementsWriter = new StreamWriter(measurementsFile, true);
+                    var rejectsWriter = new StreamWriter(rejectsFile, true);
 
-                Console.WriteLine($"Session started: {_sessionId}");
-                Console.WriteLine($"Measurement file: {measurementsFile}");
-                Console.WriteLine($"Rejects file: {rejectsFile}");
+                    measurementsWriter.WriteLine("T,Tpot,Tdew,Sh,Rh,Date");
+                    rejectsWriter.WriteLine("T,Tpot,Tdew,Sh,Rh,Date,Reason");
 
-                RaiseOnTransferStarted(_sessionId);
+                    _measurementsWriters[_sessionId] = measurementsWriter;
+                    _rejectsWriters[_sessionId] = rejectsWriter;
 
-                return _sessionId;
-            }
-            catch (Exception ex)
-            {
-                throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message });
+                    Console.WriteLine($"Session started: {_sessionId}");
+                    Console.WriteLine($"Measurement file: {measurementsFile}");
+                    Console.WriteLine($"Rejects file: {rejectsFile}");
+                    Console.WriteLine($"Writers created: Measurements={measurementsWriter != null}, Rejects={rejectsWriter != null}");
+
+                    RaiseOnTransferStarted(_sessionId);
+
+                    return _sessionId;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in StartSession: {ex.Message}");
+                    throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message },
+                        new FaultReason(ex.Message));
+                }
             }
         }
 
         public bool PushSample(WeatherSample sample)
         {
-            try
+            Console.WriteLine($"PushSample called. Session: {_sessionId}");
+
+            lock (_lockObject)
             {
-                if (sample.Date == DateTime.MinValue)
-                    throw new FaultException<ValidationFault>(new ValidationFault { Message = "Invalid date"});
+                try
+                {
+                    if(string.IsNullOrEmpty(_sessionId) || !_measurementsWriters.ContainsKey(_sessionId) || !_rejectsWriters.ContainsKey(_sessionId))
+                    {
+                        throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "Session not properly initialized. Call StartSession first."},
+                            new FaultReason("Session not initialized"));
+                    }
 
-                if (sample.Sh <= 0)
-                    throw new FaultException<ValidationFault>(new ValidationFault { Message = "Specific humidity must be positive"});
+                    var measurementsWriter = _measurementsWriters[_sessionId];
+                    var rejectsWriter = _rejectsWriters[_sessionId];
 
-                if (sample.Sh < 0 || sample.Sh > 100)
-                    throw new FaultException<ValidationFault>(new ValidationFault { Message = "Relative humidity must be between 0 and 100"});
+                    Console.WriteLine($"MeasurementsWriter: {measurementsWriter != null}");
+                    Console.WriteLine($"RejectsWriter: {rejectsWriter != null}");
 
-                AnalyzeSpecificHumidity(sample);
-                AnalyzeHeatIndex(sample);
 
-                _measurementsWriter.WriteLine($"{sample.T},{sample.Tpot},{sample.Tdew},{sample.Sh},{sample.Rh},{sample.Date:o}");
-                _measurementsWriter.Flush();
+                    if (sample.Date == DateTime.MinValue)
+                        throw new FaultException<ValidationFault>(new ValidationFault { Message = "Invalid date" },
+                            new FaultReason("Invalid date"));
 
-                Console.WriteLine($"Sample received: {sample.Date}");
+                    if (double.IsNaN(sample.Sh) || sample.Sh < 0 || sample.Sh > 100)
+                        throw new FaultException<ValidationFault>(new ValidationFault { Message = "Specific humidity must be between 0 and 100" },
+                            new FaultReason("Invalid specific humidity"));
 
-                RaiseOnSampleReceived(sample);
 
-                return true;
-            }
-            catch (FaultException) 
-            {
-                throw;
-            }
-            catch(Exception ex)
-            {
-                _rejectsWriter.WriteLine($"{sample.T},{sample.Tpot},{sample.Tdew},{sample.Sh},{sample.Rh},{sample.Date:o},{ex.Message}");
-                _rejectsWriter.Flush();
+                    AnalyzeSpecificHumidity(sample);
+                    AnalyzeHeatIndex(sample);
 
-                Console.WriteLine($"Rejected sample: {ex.Message}");
+                    measurementsWriter.WriteLine($"{sample.T},{sample.Tpot},{sample.Tdew},{sample.Sh},{sample.Rh},{sample.Date:o}");
+                    measurementsWriter.Flush();
 
-                throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message });
+                    Console.WriteLine($"Sample received: {sample.Date}");
+
+                    RaiseOnSampleReceived(sample);
+
+                    return true;
+                }
+                catch (FaultException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    if (_rejectsWriters.ContainsKey(_sessionId))
+                    {
+                        _rejectsWriters[_sessionId].WriteLine($"{sample.T},{sample.Tpot},{sample.Tdew},{sample.Sh},{sample.Rh},{sample.Date:o},{ex.Message}");
+                        _rejectsWriters[_sessionId].Flush();
+                    }
+
+                    Console.WriteLine($"Rejected sample: {ex.Message}");
+
+                    throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message },
+                        new FaultReason(ex.Message));
+                }
             }
         }
 
         public bool EndSession(string sessionId)
         {
-            try
+            lock (_lockObject)
             {
-                if (_sessionId != sessionId)
-                    throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "Invalid session ID"});
+                try
+                {
+                    if(string.IsNullOrEmpty(_sessionId) || _sessionId != sessionId)
+                    {
+                        throw new FaultException<DataFormatFault>(new DataFormatFault { Message = "Invalid session ID"},
+                            new FaultReason("Invalid session ID"));
+                    }
 
-                DisposeWriters();
-                RaiseOnTransferCompleted(sessionId);
+                    if (_measurementsWriters.ContainsKey(_sessionId))
+                    {
+                        _measurementsWriters[_sessionId].Close();
+                        _measurementsWriters[_sessionId].Dispose();
+                        _measurementsWriters.Remove(_sessionId);
+                    }
 
-                return true;
-            }
-            catch(Exception ex)
-            {
-                throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message});
+                    if (_rejectsWriters.ContainsKey(sessionId))
+                    {
+                        _rejectsWriters[sessionId].Close();
+                        _rejectsWriters[_sessionId].Dispose();
+                        _rejectsWriters.Remove(_sessionId);
+                    }
+
+                    Console.WriteLine($"Session ended: {sessionId}");
+                    RaiseOnTransferCompleted(sessionId);
+
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in EndSession: {ex.Message}");
+                    throw new FaultException<DataFormatFault>(new DataFormatFault { Message = ex.Message },
+                        new FaultReason(ex.Message));
+                }
             }
         }
 
@@ -226,7 +283,7 @@ namespace WeatherStationServer
             _previousHi = hi;
         }
 
-        private void DisposeWriters()
+        /*private void DisposeWriters()
         {
             _measurementsWriter?.Close();
             _measurementsWriter?.Dispose();
@@ -234,14 +291,25 @@ namespace WeatherStationServer
             _rejectsWriter?.Close();
             _rejectsWriter?.Dispose();
         }
-
+        */
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
                 if (disposing)
                 {
-                    DisposeWriters();
+                    foreach(var writer in _measurementsWriters.Values)
+                    {
+                        writer?.Close();
+                        writer?.Dispose();
+                    }
+                    foreach(var writer in _rejectsWriters.Values)
+                    {
+                        writer?.Close();
+                        writer?.Dispose();
+                    }
+                    _measurementsWriters.Clear();
+                    _rejectsWriters.Clear();
                 }
                 _disposed = true;
             }
